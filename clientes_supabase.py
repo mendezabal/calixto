@@ -1,5 +1,4 @@
 import pymysql
-import supabase
 from supabase import create_client
 
 # Configuração do banco de dados MySQL
@@ -52,6 +51,15 @@ try:
 
     conn.commit()
     print(f"Total de {len(clientes)} clientes inseridos no banco de dados MySQL.")
+
+    # Limpar todos os registros da tabela 'clientes' no Supabase
+    delete_response = supabase_client.table('clientes').delete().neq('id', 0).execute()
+
+    if hasattr(delete_response, 'error') and delete_response.error:
+        print(f"Erro ao limpar tabela no Supabase: {delete_response.error}")
+        raise Exception(delete_response.error)
+
+    print("Tabela 'clientes' no Supabase foi limpa com sucesso.")
 
 except Exception as e:
     print(f"Erro durante a execução: {e}")

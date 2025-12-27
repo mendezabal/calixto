@@ -1,7 +1,6 @@
 import requests
 import pymysql
 import json
-import time  # <<==== adicionar
 
 # Configuração do banco de dados MySQL
 db_config = {
@@ -81,9 +80,6 @@ try:
             break
 
         pagina += 1
-
-        # Pausa de 2 segundos entre uma chamada e outra
-        time.sleep(2)
 
     print("Todos os dados foram inseridos no banco de dados.")
 

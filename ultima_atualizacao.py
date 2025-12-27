@@ -1,12 +1,12 @@
-import mysql.connector
+import pymysql
 from datetime import datetime
 
 # Conectar ao banco de dados
-conn = mysql.connector.connect(
+conn = pymysql.connect(
     host='localhost',        # Exemplo: 'localhost'
-    user='root',     # Exemplo: 'root'
-    password='Ns_Sra-1976*',   # Sua senha
-    database='calixto'  # Nome do banco de dados
+    user='root',             # Exemplo: 'root'
+    password='Ns_Sra-1976*', # Sua senha
+    database='calixto'       # Nome do banco de dados
 )
 
 cursor = conn.cursor()

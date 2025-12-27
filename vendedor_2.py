@@ -1,7 +1,5 @@
 import requests
 import pymysql
-import json
-import time  # <<==== adicionar
 
 # Configuração do banco de dados MySQL
 db_config = {
@@ -12,22 +10,22 @@ db_config = {
 }
 
 # URL da API e cabeçalhos
-url = "https://app.omie.com.br/api/v1/geral/produtos/"
+url = "https://app.omie.com.br/api/v1/geral/vendedores/"
 headers = {"Content-Type": "application/json"}
 
 # Credenciais da API
 data = {
-    "call": "ListarProdutos",
+    "call": "ListarVendedores",
     "app_key": "4205722127607",
     "app_secret": "85381b60ecdb50ad73e461b57857571c",
     "param": [{
         "pagina": 1,
-        "registros_por_pagina": 500,
-        "apenas_importado_api": "N",
-        "filtrar_apenas_omiepdv": "N"
+        "registros_por_pagina": 5,
+        "apenas_importado_api": "N"
     }]
 }
 
+vendedores_total = []
 pagina = 1
 
 # Inicializa as variáveis de conexão e cursor
@@ -40,50 +38,53 @@ try:
     cursor = conn.cursor()
 
     # Limpar a tabela antes de inserir novos dados
-    cursor.execute("DELETE FROM produtos")
-    cursor.execute("ALTER TABLE produtos AUTO_INCREMENT = 1")
+    cursor.execute("DELETE FROM vendedores")
+    cursor.execute("ALTER TABLE vendedores AUTO_INCREMENT = 1")
     conn.commit()
-    print("Tabela 'produtos' limpa e sequência de auto incremento reiniciada.")
+    print("Tabela 'vendedores' limpa e sequência de auto incremento reiniciada.")
 
     while True:
         data["param"][0]["pagina"] = pagina
-        response = requests.post(url, headers=headers, json=data)
-
-        if response.status_code != 200:
-            print(f"Erro na requisição: {response.status_code}")
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Erro na requisição: {e}")
             break
 
         resposta = response.json()
 
-        # Verifica se há produtos na resposta
-        if "produto_servico_cadastro" not in resposta or not resposta["produto_servico_cadastro"]:
-            print("Nenhum produto encontrado ou estrutura inesperada.")
+        # Exibir a resposta completa para depuração
+        # print("Resposta da API:", json.dumps(resposta, indent=2, ensure_ascii=False))
+
+        # Verifica se há dados na resposta
+        if "cadastro" not in resposta or not resposta["cadastro"]:
+            print("Nenhum dado encontrado ou estrutura inesperada.")
             break
 
-        # Processa os produtos e insere no banco de dados
-        for produto in resposta["produto_servico_cadastro"]:
+        # Processa os dados e insere no banco de dados
+        for vendedor in resposta["cadastro"]:
             valores = (
-                produto.get("codigo", ""),
-                produto.get("codigo_produto", ""),
-                produto.get("descricao", "")
+                vendedor.get("codigo", ""),
+                vendedor.get("nome", "")
             )
 
+            # print("Inserindo:", valores)  # Depuração
+
             sql = """
-                INSERT INTO produtos (codigo, codigo_produto, descricao)
-                VALUES (%s, %s, %s)
+                INSERT INTO vendedores (codigo, nome)
+                VALUES (%s, %s)
             """
             cursor.execute(sql, valores)
 
         conn.commit()
+        # print(f"Página {pagina} processada com sucesso.")
 
         # Se a quantidade de registros retornados for menor que o máximo por página, encerra o loop
-        if len(resposta["produto_servico_cadastro"]) < 500:
+        if len(resposta["cadastro"]) < 5:
             break
 
         pagina += 1
-
-        # Pausa de 2 segundos entre uma chamada e outra
-        time.sleep(2)
 
     print("Todos os dados foram inseridos no banco de dados.")
 
